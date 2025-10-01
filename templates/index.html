@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>News Classifier — Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width:900px; margin:2rem auto; padding:0 1rem; }
+    textarea { width:100%; height:150px; padding:0.6rem; font-size:14px; }
+    button { padding:0.6rem 1rem; font-size:14px; cursor:pointer; }
+    .result { border:1px solid #eee; padding:1rem; border-radius:8px; margin-top:1rem; background:#fafafa; }
+    .prob { font-family:monospace; }
+    .top-token { display:inline-block; margin:0.25rem 0.5rem; padding:0.2rem 0.4rem; border-radius:6px; background:#fff; box-shadow:0 1px 0 rgba(0,0,0,0.04); }
+  </style>
+</head>
+<body>
+  <h1>News Classifier</h1>
+  <p>Paste text and click <b>Predict</b>.</p>
+
+  <textarea id="text" placeholder="Paste article headline or body..."></textarea>
+  <div style="margin-top:0.5rem;">
+    <button id="predictBtn">Predict</button>
+  </div>
+
+  <div id="out" class="result" style="display:none;"></div>
+
+<script>
+async function predict(text){
+  const res = await fetch('/predict', {
+    method:'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({text})
+  });
+  return res.json();
+}
+
+document.getElementById('predictBtn').addEventListener('click', async () => {
+  const text = document.getElementById('text').value;
+  if (!text.trim()) { alert('Please paste some text.'); return; }
+  const out = document.getElementById('out');
+  out.style.display = 'block';
+  out.innerHTML = '<em>Predicting…</em>';
+  const data = await predict(text);
+  if (data.error) {
+    out.innerHTML = '<b>Error:</b> ' + data.error;
+    return;
+  }
+  let html = `<h3>Prediction: ${data.prediction}</h3>`;
+  html += '<h4>Probabilities</h4>';
+  for (const [k,v] of Object.entries(data.probabilities)) {
+    html += `<div class="prob">${k}: ${Number(v).toFixed(3)}</div>`;
+  }
+  out.innerHTML = html;
+});
+</script>
+</body>
+</html>
